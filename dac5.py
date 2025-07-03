@@ -251,6 +251,69 @@ emoji_art = {
     "The World": "🌍🌐🎊🕊️"
 }
 
+def draw_card_back(width, height=10, pattern="🔮✨"):
+    lines = []
+    h_border = "+" + "-" * (width - 2) + "+"
+    lines.append(h_border)
+    for i in range(height - 2):
+        # Alternate pattern to fill inside
+        content = (pattern * ((width // len(pattern)) + 1))[:width - 2]
+        lines.append("|" + content + "|")
+    lines.append(h_border)
+    return lines
+
+def animate_flip(card_lines, back_lines, steps=5, delay=0.1):
+    import os
+    # card_lines = full card content (list of strings)
+    # back_lines = back face (list of strings)
+    max_width = max(len(line) for line in card_lines)
+    height = len(card_lines)
+
+    for step in range(steps):
+        os.system('clear')
+        # Calculate width shrink (goes down to 1)
+        shrink_width = max_width - (step * (max_width // steps))
+        if shrink_width < 1:
+            shrink_width = 1
+        # Print back face shrinking
+        for i in range(height):
+            line = back_lines[i]
+            # Center crop line to shrink_width
+            line_content = line[1:-1]  # remove border chars
+            if shrink_width < 2:
+                # Minimal width, print just borders
+                print("|" + " " * (shrink_width - 2) + "|")
+            else:
+                start = (len(line_content) - shrink_width + 2) // 2
+                cropped = line_content[start:start + shrink_width - 2]
+                print("|" + cropped + "|")
+
+        time.sleep(delay)
+
+    # Expand back to full card (actual content)
+    for step in range(steps):
+        os.system('clear')
+        expand_width = (step + 1) * (max_width // steps)
+        if expand_width > max_width:
+            expand_width = max_width
+        for i in range(height):
+            line = card_lines[i]
+            # Crop or pad the line content to expand_width
+            content = line[1:-1]
+            if expand_width < 2:
+                print("|" + " " * (expand_width - 2) + "|")
+            else:
+                start = max(0, (len(content) - expand_width + 2) // 2)
+                cropped = content[start:start + expand_width - 2]
+                print("|" + cropped.ljust(expand_width - 2) + "|")
+        time.sleep(delay)
+
+    # Finally print full card to ensure full display
+    os.system('clear')
+    for line in card_lines:
+        print(line)
+
+
 def draw_tarot_card(cards, wrap_width=60):
     card = random.choice(cards)
 
@@ -277,28 +340,59 @@ def draw_tarot_card(cards, wrap_width=60):
         Fore.LIGHTMAGENTA_EX + f"Location: {location}",
         Fore.LIGHTMAGENTA_EX + f"Source: {source}"
     ]
+def build_card_lines(name, number, meaning_lines, card_text_lines, footer_lines, emoji_line, width):
+    lines = []
+    h_border = "+" + "-" * (width - 2) + "+"
+    lines.append(h_border)
+    lines.append(f"|{name.center(width - 2)}|")
+    lines.append("|" + " " * (width - 2) + "|")
+    lines.append(f"|{emoji_line.center(width - 2)}|")
+    lines.append("|" + " " * (width - 2) + "|")
 
-    # Assemble the card
-    card_lines = []
-    card_lines.append(Fore.YELLOW + Style.BRIGHT + title_line)
-    card_lines.append("")
-    card_lines.append(Fore.MAGENTA + emoji_line.center(wrap_width))
-    card_lines.append("")
-    card_lines.extend(Fore.GREEN + line for line in wrapped_meaning)
-    card_lines.append("")
-    card_lines.extend(wrapped_text)
-    card_lines.extend(footer_lines)
+    for line in meaning_lines:
+        lines.append(f"|{line.ljust(width - 2)}|")
+    lines.append("|" + " " * (width - 2) + "|")
+    for line in card_text_lines:
+        lines.append(f"|{line.ljust(width - 2)}|")
+    lines.append("|" + " " * (width - 2) + "|")
+    for line in footer_lines:
+        lines.append(f"|{line.ljust(width - 2)}|")
+    lines.append(h_border)
+    return lines
 
-    # Determine width and draw box
-    max_width = max(visible_width(line) for line in card_lines)
-    h_border = "+" + "-" * (max_width + 2) + "+"
 
-    print("\n" + h_border)
-    for line in card_lines:
-        padding = max_width - visible_width(line)
-        print(f"| {line}{' ' * padding} |")
+def draw_tarot_card(cards, wrap_width=60):
+    card = random.choice(cards)
 
-    print(h_border + "\n")
+    name = f"{card['name']} (Card #{card['number']})"
+    meaning = card["meaning"]
+    card_text = card["card_text"]
+    inspiration = f"Inspiration: {card['inspiration']}"
+    location = f"Location: {card['location']}"
+    source = f"Source: {card['source']}"
+    emoji_line = emoji_art.get(card["name"], "🔮✨")
+
+    wrapped_meaning = textwrap.wrap(meaning, wrap_width)
+    wrapped_card_text = textwrap.wrap(card_text, wrap_width)
+    footer_lines = [inspiration, location, source]
+
+    # Compute max width for card box
+    max_content_width = max(
+        [len(name), len(emoji_line)] +
+        [len(line) for line in wrapped_meaning] +
+        [len(line) for line in wrapped_card_text] +
+        [len(line) for line in footer_lines]
+    )
+    width = max(wrap_width, max_content_width) + 4  # add padding for borders
+
+    # Build card face lines
+    card_lines = build_card_lines(name, 0, wrapped_meaning, wrapped_card_text, footer_lines, emoji_line, width)
+
+    # Build card back lines
+    back_lines = draw_card_back(width, height=len(card_lines), pattern="🔮✨")
+
+    # Animate the flip
+    animate_flip(card_lines, back_lines, steps=6, delay=0.08)
 
 
 if __name__ == "__main__":
