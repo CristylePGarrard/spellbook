@@ -1,25 +1,35 @@
 #!/usr/bin/env python3
 import random
-from colorama import init, Fore, Style
 import textwrap
+import re
+from colorama import init, Fore, Style
+
+init(autoreset=True)
+
+# Strip ANSI codes for alignment calculations
+def strip_ansi(text):
+    ansi_escape = re.compile(r'\x1b\\[[0-9;]*m')
+    return ansi_escape.sub('', text)
+
+textwrap.strip_ansi = strip_ansi  # Monkey-patch for convenience
 
 cards = [
-    {"name": "The Fool", 
-	 "number": 0, "meaning": "Beginnings, possibilities, impulsiveness, innocence, a free spirit",
-	 "card_text": "The Fool rests on the pinnacle of a decision. She is ready to dive out of her "
-                 "subconscious and into the physical world. To transform from an animal into a human. "
-                 "She is carefree and excited by a new life, regardless of warnings.",
-	 "inspiration": "The Little Mermaid",
+    {"name": "The Fool",
+     "number": 0, "meaning": "Beginnings, possibilities, impulsiveness, innocence, a free spirit",
+     "card_text": "The Fool rests on the pinnacle of a decision. She is ready to dive out of her "
+                  "subconscious and into the physical world. To transform from an animal into a human. "
+                  "She is carefree and excited by a new life, regardless of warnings.",
+     "inspiration": "The Little Mermaid",
      "location": "Denmark",
      "source":"Danish Fairy Tale"},
     {"name": "The Magician",
      "number": 1, "meaning": "Originality, self-confidence, skill, a breakthrough, resourcefulness",
-	"card_text": "The Magician is a helping hand. She has the ability to change raw materials into "
-                 "something wonderful, and dreaming into doing. But she is only the helping hand; "
-                 "it is up to the protagonist to use her support, moving forward to do the right thing.",
-	"inspiration": "The Fairy Godmother",
-	"location": "France",
-	"source": "French Fairy Tale"},
+     "card_text": "The Magician is a helping hand. She has the ability to change raw materials into "
+                  "something wonderful, and dreaming into doing. But she is only the helping hand; "
+                  "it is up to the protagonist to use her support, moving forward to do the right thing.",
+     "inspiration": "The Fairy Godmother",
+     "location": "France",
+     "source": "French Fairy Tale"},
     {"name": "The High Priestess",
      "number": 2, "meaning": "Wisdom, intuition, dreams, meandering, an enigma",
      "card_text": "The High Priestess is a keeper of vast knowledge. With a story for every situation. "
@@ -200,137 +210,82 @@ cards = [
      "location": "New Zealand",
      "source": "Maori Legend"}
 ]
-
-llama_art = {
-    "The Fool": r"""
-      (o.o)
-       >^<
-    """,
-
-    "The Magician": r"""
-     /\_/\
-    ( •_•)
-      >⚡<
-    """,
-
-    "The High Priestess": r"""
-     (\_/)
-    ( •_•)
-     /︿︿\
-    """,
-
-    "The Empress": r"""
-      (•͡ᴗ•͡)
-    <|:♕:|>
-     | |
-    """,
-
-    "The Emperor": r"""
-     (ò_ó)
-    <|##|>
-      / \
-    """,
-
-    "Death": r"""
-    (x_x)
-    /|💀|\
-     / \
-    """,
-
-    "The Star": r"""
-     ☆ﾟ.*･｡ﾟ
-    (•‿•)
-     /★\
-    """,
-
-    "The Moon": r"""
-     🌙
-    ( ._.)
-    /|   |\
-      / \
-    """,
-
-    "The Sun": r"""
-     ☀️☀️
-    (＾▽＾)
-     \|/
-     / \
-    """,
-
-    "The World": r"""
-    (🌍)
-    /|🌎|\
-     / \
-    """
+# Emoji art per card
+emoji_art = {
+    "The Fool": "🃏😄🎒🐕",
+    "The Magician": "✨🧙‍♀️🪄🧠",
+    "The High Priestess": "🌙👸📚💫",
+    "The Empress": "🌸👑🤰🌿",
+    "The Emperor": "🛡️👑🗡️🏛️",
+    "The Hierophant": "📜🙏👨‍🏫🕊️",
+    "The Lovers": "💑❤️🌹💫",
+    "The Chariot": "🛻🏁🏹🏇",
+    "Strength": "🦁💪🧘‍♀️🧡",
+    "The Hermit": "🏞️🧙‍♂️🕯️🧘",
+    "Wheel of Fortune": "🎡🔄🍀🎲",
+    "Justice": "⚖️👩‍⚖️📏🧠",
+    "The Hanged Man": "🙃⏸️🌳✨",
+    "Death": "💀🦋🌑🌱",
+    "Temperance": "⚗️🧘‍♂️🌈🏞️",
+    "The Devil": "😈🔥🪤🍷",
+    "The Tower": "🌩️🏰🔥💥",
+    "The Star": "🌟🌌✨🕊️",
+    "The Moon": "🌕🌙😵🌀",
+    "The Sun": "🌞🌻👶🎉",
+    "Judgement": "🎺⚰️🌅👼",
+    "The World": "🌍🌐🎊🕊️"
 }
 
+def draw_tarot_card(cards, wrap_width=60):
+    card = random.choice(cards)
+
+    name = card["name"]
+    number = card["number"]
+    meaning = card["meaning"]
+    card_text = card["card_text"]
+    inspiration = card["inspiration"]
+    location = card["location"]
+    source = card["source"]
+    emoji_line = emoji_art.get(name, "🔮✨")
+
+    # Center title
+    title_line = f"{name} (Card #{number})".center(wrap_width)
+
+    # Wrap and center meaning and text
+    wrapped_meaning = [line.center(wrap_width) for line in textwrap.wrap(meaning, wrap_width)]
+    wrapped_text = [line for line in textwrap.wrap(card_text, wrap_width)]
+
+    # Footer
+    footer_lines = [
+        "",
+        Fore.LIGHTMAGENTA_EX + f"Inspiration: {inspiration}",
+        Fore.LIGHTMAGENTA_EX + f"Location: {location}",
+        Fore.LIGHTMAGENTA_EX + f"Source: {source}"
+    ]
+
+    # Assemble the card
+    card_lines = []
+    card_lines.append(Fore.YELLOW + Style.BRIGHT + title_line)
+    card_lines.append("")
+    card_lines.append(Fore.MAGENTA + emoji_line.center(wrap_width))
+    card_lines.append("")
+    card_lines.extend(Fore.GREEN + line for line in wrapped_meaning)
+    card_lines.append("")
+    card_lines.extend(wrapped_text)
+    card_lines.extend(footer_lines)
+
+    # Determine width and draw box
+    max_width = max(len(textwrap.strip_ansi(line)) for line in card_lines)
+    h_border = "+" + "-" * (max_width + 2) + "+"
+
+    print("\n" + h_border)
+    for line in card_lines:
+        plain = textwrap.strip_ansi(line)
+        print(f"| {line}{' ' * (max_width - len(plain))} |")
+    print(h_border + "\n")
 
 
-import re
-
-def strip_ansi(text):
-    ansi_escape = re.compile(r'\x1b\[.*?m')
-    return ansi_escape.sub('', text)
-
-# Monkey-patch textwrap for convenience
-textwrap.strip_ansi = strip_ansi
+if __name__ == "__main__":
+    draw_tarot_card(cards)
 
 
-init(autoreset=True)
-
-# Draw a random card
-card = random.choice(cards)
-name = card["name"]
-number = card["number"]
-meaning = card["meaning"]
-card_text = card["card_text"]
-art = llama_art.get(name, "(no llama yet)")
-inspiration = card["inspiration"]
-location = card["location"]
-source = card["source"]
-
-# Configurable wrap width
-wrap_width = 60
-
-# Clean and center ASCII art
-art_cleaned = textwrap.dedent(art).strip("\n")
-art_lines = [line.center(wrap_width) for line in art_cleaned.split("\n")]
-
-# footer lines with inspiration, location and source
-footer_lines = [
-    "",
-    Fore.LIGHTMAGENTA_EX + f"Inspiration: {inspiration}",
-    Fore.LIGHTMAGENTA_EX + f"Location: {location}",
-    Fore.LIGHTMAGENTA_EX + f"Source: {source}"
-]
-
-# Center title and number
-title_line = name.center(wrap_width)
-
-# Wrap and center meaning + card_text
-wrapped_meaning = [line.center(wrap_width) for line in textwrap.wrap(f"{meaning}", width=wrap_width)]
-wrapped_text = textwrap.wrap(card_text, width=wrap_width)
-
-# Build all card content
-card_lines = []
-card_lines.append(Fore.YELLOW + Style.BRIGHT + title_line)
-card_lines.append("")
-card_lines.extend(Fore.MAGENTA + line for line in art_lines)
-card_lines.append("")
-card_lines.extend(Fore.GREEN + line for line in wrapped_meaning)
-card_lines.append("")
-card_lines.extend(wrapped_text)
-card_lines.extend(footer_lines)
-
-# Determine box width
-max_width = max(len(textwrap.strip_ansi(line)) for line in card_lines)
-h_border = "+" + "-" * (max_width + 2) + "+"
-
-# Print boxed card
-print()
-print(h_border)
-for line in card_lines:
-    plain = textwrap.strip_ansi(line)
-    print(f"| {line}{' ' * (max_width - len(plain))} |")
-print(h_border)
-print()
